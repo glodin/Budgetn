@@ -1,54 +1,90 @@
-<<<<<<< HEAD
-# Welcome to your Expo app 👋
+# BudgetN - Smart Money Management App 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+BudgetN is a comprehensive expense tracking and budget management application built with Expo and React Native, designed to help users manage their finances effectively.
 
-## Get started
+## Features
+
+- Multi-currency support with real-time conversion
+- Transaction tracking with categories
+- Income and expense management
+- Visual analytics and charts
+- Customizable themes
+- Recurring transactions
+- Smart filtering and search
+
+## Project Structure
+
+budgetn/
+├── app/
+│   ├── (tabs)/                 # Tab-based navigation screens
+│   │   ├── home.tsx           # Main dashboard
+│   │   ├── transactions.tsx   # Transaction list and management
+│   │   └── settings.tsx       # App settings and preferences
+│   ├── splash.tsx             # Splash screen
+│   └── _layout.tsx            # Root layout with providers
+├── components/                 # Reusable UI components
+├── constants/                  # App constants and configurations
+├── contexts/                   # React Context providers
+│   ├── ThemeContext.tsx       # Theme management
+│   ├── TransactionContext.tsx # Transaction state management
+│   └── CurrencyContext.tsx    # Currency management
+├── services/                   # Backend services
+├── assets/                     # Static assets and images
+└── types/                     # TypeScript type definitions
+
+## Getting Started
 
 1. Install dependencies
 
-   ```bash
-   npm install
-   ```
+bash
+npm install
 
-2. Start the app
 
-   ```bash
-    npx expo start
-   ```
+## Development Options
 
-In the output, you'll find options to open the app in a
+You can run the app on:
+- iOS Simulator
+- Android Emulator
+- Physical device using Expo Go
+- Development build
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Key Technologies
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Expo Router for navigation
+- React Native Reanimated for animations
+- SQLite for local data storage
+- Victory Native for charts
+- React Native Paper for UI components
 
-## Get a fresh project
+## Contributing
 
-When you're ready, run:
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-```bash
-npm run reset-project
-```
+## Learn More
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
 
-## Learn more
+## Support
 
-To learn more about developing your project with Expo, look at the following resources:
+Join our community:
+- GitHub Issues
+- Discord Community
+- Documentation Wiki
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## License
 
-## Join the community
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Join our community of developers creating universal apps.
+## Version
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-=======
-# Budgetn
->>>>>>> 3d6fc878eaa50f54f2796cbb2ee56f9b8c7fd95a
+Current Version: 1.0.0
+
+---
+
+Built with ❤️ using Expo and React Native

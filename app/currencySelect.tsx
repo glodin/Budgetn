@@ -1,16 +1,8 @@
 import React from 'react';
 import { View, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { useCurrency } from '../contexts/CurrencyContext';
+import { useCurrency, currencies } from '../contexts/CurrencyContext';
 import { router } from 'expo-router';
-
-const currencies = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  // Add more currencies as needed
-];
 
 export default function CurrencySelect() {
   const { theme } = useTheme();

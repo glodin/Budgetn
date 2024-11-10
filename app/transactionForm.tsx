@@ -6,6 +6,7 @@ import { useTransactions } from '../contexts/TransactionContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import RecurringTransactionSettings from '../components/RecurringTransactionSettings';
 
 const expenseCategories = [
   'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Other'
@@ -50,6 +51,13 @@ export default function TransactionForm() {
   const [amount, setAmount] = useState(existingTransaction ? Math.abs(existingTransaction.amount).toString() : '');
   const [category, setCategory] = useState(existingTransaction?.category || 'Other');
   const [date, setDate] = useState(existingTransaction ? new Date(existingTransaction.date) : new Date());
+  const [isRecurring, setIsRecurring] = useState(existingTransaction?.isRecurring || false);
+  const [recurringType, setRecurringType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | undefined>(
+    existingTransaction?.recurringType
+  );
+  const [recurringEndDate, setRecurringEndDate] = useState<string | null>(
+    existingTransaction?.recurringEndDate || null
+  );
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>(
     existingTransaction ? (existingTransaction.amount < 0 ? 'expense' : 'income') : 'expense'
   );
@@ -71,28 +79,36 @@ export default function TransactionForm() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       const transactionData = {
         title,
-        amount: transactionType === 'expense' ? -Math.abs(parseFloat(amount)) : Math.abs(parseFloat(amount)),
-        category,
+        amount: parseFloat(amount) * (transactionType === 'expense' ? -1 : 1),
         date: date.toISOString().split('T')[0],
-        type: transactionType,
+        category,
+        isRecurring,
+        recurringType: isRecurring ? recurringType : undefined,
+        recurringEndDate: isRecurring ? recurringEndDate : null,
       };
 
       if (isEditMode && params.transactionId) {
-        await updateTransaction({ ...transactionData, id: params.transactionId });
+        await updateTransaction({
+          id: params.transactionId,
+          ...transactionData,
+        });
       } else {
         await addTransaction(transactionData);
       }
+
       router.back();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save transaction. Please try again.');
       console.error('Error saving transaction:', error);
+      Alert.alert(
+        'Error',
+        'Failed to save transaction. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -260,6 +276,20 @@ export default function TransactionForm() {
           ))}
         </ScrollView>
 
+<View style={styles.sectionContainer}>
+  <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>
+    Recurring Settings
+  </Text>
+  <RecurringTransactionSettings
+    isRecurring={isRecurring}
+    recurringType={recurringType}
+    recurringEndDate={recurringEndDate}
+    onRecurringChange={setIsRecurring}
+    onRecurringTypeChange={setRecurringType}
+    onEndDateChange={setRecurringEndDate}
+  />
+</View>
+
         <Pressable 
           style={[styles.button, { backgroundColor: theme.primary }]}
           onPress={handleSubmit}
@@ -384,4 +414,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+
+  sectionContainer: {
+  marginTop: 24,
+  marginBottom: 16,
+},
 }); 

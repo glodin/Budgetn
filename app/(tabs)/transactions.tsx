@@ -7,6 +7,17 @@ import { useTransactions } from '../../contexts/TransactionContext';
 import TransactionItem from '../../components/TransactionItem';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import CategoryFilter from '../../components/CategoryFilter';
+import { expenseCategories, incomeCategories } from '../../constants/categories';
+
+type Transaction = {
+  id: string;
+  amount: number;
+  category: string;
+  title: string;
+  date: string | Date;
+  // Add other properties your transaction object uses
+};
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +27,12 @@ const formatAmount = (amount: number, currency: { symbol: string, code: string }
     currency: currency.code,
     currencyDisplay: 'symbol',
   }).format(Math.abs(amount));
+};
+
+const typeIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
+  all: 'apps',
+  income: 'trending-up',
+  expense: 'trending-down'
 };
 
 export default function Transactions() {
@@ -31,14 +48,26 @@ export default function Transactions() {
     { id: 'expenses', label: 'Expenses' },
   ];
 
+  const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = 
-      selectedFilter === 'all' ||
-      (selectedFilter === 'income' && transaction.amount > 0) ||
-      (selectedFilter === 'expenses' && transaction.amount < 0);
-    return matchesSearch && matchesFilter;
+    if (selectedType !== 'all' && 
+        ((selectedType === 'income' && transaction.amount < 0) || 
+         (selectedType === 'expense' && transaction.amount > 0))) {
+      return false;
+    }
+    
+    if (selectedCategory && transaction.category !== selectedCategory) {
+      return false;
+    }
+    
+    return true;
   });
+
+  const currentCategories = selectedType === 'income' ? incomeCategories : 
+                          selectedType === 'expense' ? expenseCategories :
+                          [...new Set([...incomeCategories, ...expenseCategories])];
 
   const handleDelete = (id: string) => {
     Alert.alert(
@@ -51,7 +80,13 @@ export default function Transactions() {
         },
         { 
           text: "Delete", 
-          onPress: () => deleteTransaction(id),
+          onPress: async () => {
+            try {
+              await deleteTransaction(id);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete transaction');
+            }
+          },
           style: "destructive"
         }
       ]
@@ -158,49 +193,55 @@ export default function Transactions() {
         </View>
 
         {/* Filters */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContainer}
-        >
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[
-                styles.filterChip,
-                selectedFilter === filter.id && styles.filterChipActive,
-                { 
-                  backgroundColor: selectedFilter === filter.id 
-                    ? theme.primary 
-                    : theme.surface,
-                  borderColor: theme.primary,
-                }
-              ]}
-              onPress={() => setSelectedFilter(filter.id)}
-            >
-              {filter.id !== 'all' && (
-                <Ionicons 
-                  name={filter.id === 'income' ? 'arrow-up' : 'arrow-down'} 
-                  size={16} 
-                  color={selectedFilter === filter.id ? '#FFF' : theme.primary}
-                  style={styles.filterIcon}
-                />
-              )}
-              <Text 
+        <View style={styles.filtersWrapper}>
+          <Text style={[styles.filterTitle, { color: theme.text.secondary }]}>
+            Transaction Type
+          </Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.transactionTypeFilter}
+          >
+            {['all', 'income', 'expense'].map((type) => (
+              <Pressable
+                key={type}
                 style={[
-                  styles.filterText,
+                  styles.filterTypeButton,
                   { 
-                    color: selectedFilter === filter.id 
-                      ? '#FFF' 
-                      : theme.primary 
+                    backgroundColor: selectedType === type ? theme.primary : theme.surface,
+                    borderColor: theme.border,
+                    shadowColor: theme.shadowColor,
                   }
                 ]}
+                onPress={() => {
+                  setSelectedType(type as any);
+                  setSelectedCategory(null);
+                }}
               >
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Ionicons 
+                  name={typeIcons[type as keyof typeof typeIcons]} 
+                  size={16} 
+                  color={selectedType === type ? '#fff' : theme.text.primary} 
+                  style={styles.filterIcon}
+                />
+                <Text style={[
+                  styles.filterText,
+                  { 
+                    color: selectedType === type ? '#fff' : theme.text.primary,
+                  }
+                ]}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          
+          <CategoryFilter
+            categories={currentCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+        </View>
       </View>
 
       {/* Transactions List */}
@@ -210,18 +251,27 @@ export default function Transactions() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: Transaction }) => (
             <Swipeable
-              renderRightActions={(progress, dragX) => renderRightActions(item.id, dragX)}
-              rightThreshold={40}
-              overshootRight={false}
               friction={2}
-              onSwipeableWillOpen={() => setIsSwipeActive(true)}
-              onSwipeableWillClose={() => setIsSwipeActive(false)}
+              overshootFriction={8}
+              rightThreshold={40}
+              renderRightActions={(progress, dragX) => (
+                <View style={styles.deleteAction}>
+                  <Pressable 
+                    style={[styles.deleteButton, { backgroundColor: '#FF3B30' }]}
+                    onPress={() => handleDelete(item.id)}
+                  >
+                    <Ionicons name="trash-outline" size={24} color="#fff" />
+                  </Pressable>
+                </View>
+              )}
             >
-              <TransactionItem 
-                {...item} 
-                onPress={() => !isSwipeActive && handleEdit(item.id)} 
+              <TransactionItem
+                {...item}
+                title={item.title}
+                date={typeof item.date === 'string' ? item.date : item.date.toISOString()}
+                onPress={() => handleEdit(item.id)}
               />
             </Swipeable>
           )}
@@ -389,6 +439,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
     backgroundColor: '#F44336',
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
@@ -434,5 +488,56 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  typeFilter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  typeChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  filtersWrapper: {
+    marginTop: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  filterTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  transactionTypeFilter: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  filterTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  deleteAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 80,
   },
 });

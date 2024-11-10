@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -10,6 +10,10 @@ interface TransactionItemProps {
   amount: number;
   date: string;
   category: string;
+  isRecurring?: boolean;
+  recurringType?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurringEndDate?: string | null;
+  isSwipeActive?: boolean;
   onPress?: () => void;
 }
 
@@ -45,10 +49,29 @@ export default function TransactionItem({
   amount,
   date,
   category,
+  isRecurring,
+  recurringType,
+  recurringEndDate,
   onPress,
 }: TransactionItemProps) {
   const { theme, isDarkMode } = useTheme();
   const { currency } = useCurrency();
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const SWIPE_THRESHOLD = 5;
+
+  const handleTouchStart = (event: GestureResponderEvent) => {
+    touchStartX.current = event.nativeEvent.pageX;
+  };
+
+  const handleTouchEnd = (event: GestureResponderEvent) => {
+    touchEndX.current = event.nativeEvent.pageX;
+    const swipeDistance = Math.abs(touchEndX.current - touchStartX.current);
+    
+    if (swipeDistance < SWIPE_THRESHOLD && onPress) {
+      onPress();
+    }
+  };
 
   const isIncome = amount > 0;
   const colorScheme = isIncome ? COLORS.income : COLORS.expense;
@@ -56,6 +79,8 @@ export default function TransactionItem({
 
   return (
     <Pressable
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       style={({ pressed }) => [
         styles.container,
         {
@@ -67,7 +92,6 @@ export default function TransactionItem({
           shadowColor: theme.shadowColor,
         }
       ]}
-      onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Transaction: ${title}, Amount: ${amount > 0 ? 'Income' : 'Expense'} ${currency.symbol}${Math.abs(amount)}, Category: ${category}, Date: ${date}`}
     >
@@ -92,12 +116,24 @@ export default function TransactionItem({
           ]}>
             {title}
           </Text>
-          <Text style={[
-            styles.category,
-            { color: theme.text.secondary }
-          ]}>
-            {category}
-          </Text>
+          <View style={styles.detailsContainer}>
+            <Text style={[styles.category, { color: theme.text.secondary }]}>
+              {category}
+            </Text>
+            {isRecurring && (
+              <View style={[styles.recurringBadge, { backgroundColor: theme.primary + '15' }]}>
+                <Ionicons 
+                  name="repeat" 
+                  size={12} 
+                  color={theme.primary}
+                  style={styles.recurringIcon}
+                />
+                <Text style={[styles.recurringText, { color: theme.primary }]}>
+                  {recurringType?.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
       
@@ -152,6 +188,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 1,
     },
+    
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -166,6 +203,7 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 14,
+    opacity: 0.8,
   },
   rightContent: {
     alignItems: 'flex-end',
@@ -177,5 +215,44 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
-  }
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  recurringIndicator: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginLeft: 8,
+  backgroundColor: 'rgba(0,0,0,0.05)',
+  paddingHorizontal: 8,
+  paddingVertical: 4,
+  borderRadius: 12,
+},
+recurringEndDate: {
+  fontSize: 12,
+  marginLeft: 4,
+  opacity: 0.8,
+},
+detailsContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+},
+recurringBadge: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 12,
+  gap: 2,
+},
+recurringIcon: {
+  marginRight: 2,
+},
+recurringText: {
+  fontSize: 10,
+  fontWeight: '600',
+},
 });
