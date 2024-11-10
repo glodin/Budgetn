@@ -53,7 +53,6 @@ export const currencies = [
   { symbol: '₴', code: 'UAH' },   // Ukrainian Hryvnia
   { symbol: '₫', code: 'VND' },   // Vietnamese Dong
   { symbol: 'Rp', code: 'IDR' },  // Indonesian Rupiah
-  { symbol: '₡', code: 'CRC' },   // Costa Rican Colón
 ];
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
